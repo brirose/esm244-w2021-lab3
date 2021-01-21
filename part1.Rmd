@@ -1,0 +1,93 @@
+---
+title: "binary logistic"
+author: "Bri Baker"
+date: "1/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(palmerpenguins)
+library(GGally)
+library(broom)
+library(jtools)
+
+```
+
+
+```{r}
+penguins %>% 
+  select(species, bill_length_mm:sex) %>% 
+  ggpairs(aes(color = species))
+```
+
+
+
+```{r}
+a_c <- penguins %>% 
+  filter(species %in% c("Adelie", "Chinstrap")) %>% 
+  mutate(species = fct_drop(species))
+
+```
+
+```{r}
+ggplot(data = a_c, aes(x = body_mass_g, y = flipper_length_mm)) +
+  geom_point(aes(color = sex)) +
+  facet_wrap(~species)
+
+```
+
+```{r}
+ac_blr <- glm(species ~ body_mass_g + flipper_length_mm + sex,
+              data = a_c,
+              family = "binomial")
+```
+
+```{r}
+ac_blr
+
+summary(ac_blr)
+```
+```{r}
+ggplot(data = a_c, aes(x = species, y = body_mass_g)) +
+  geom_jitter(aes(color = sex))
+```
+
+
+
+```{r}
+blr_fitted <- ac_blr %>% 
+  broom::augment(type.predict = "response")
+```
+
+
+```{r}
+ggplot(blr_fitted, aes(x = flipper_length_mm, y = .fitted))+
+  geom_point(aes(color = sex, pch = species)) +
+  geom_smooth(aes(color = sex), se = F)
+
+```
+
+```{r}
+effect_plot(ac_blr,
+            pred = flipper_length_mm,
+            y.label = "P chinstrap",
+            interval = T)
+effect_plot(ac_blr,
+            pred = body_mass_g,
+            y.label = "P chinstrap",
+            interval = T)
+
+```
+
+```{r}
+ex_1 <- predict(ac_blr,
+                data.frame(sex = "female", 
+                           body_mass_g = 3410,
+                           flipper_length_mm = 192),
+                type = "response")
+
+ex_1
+```
+
